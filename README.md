@@ -20,6 +20,15 @@
     ```
     
 ## Usage
+- 添加依赖
+    ```xml
+    <dependency>
+        <groupId>com.github.cwdtom</groupId>
+        <artifactId>poseidon</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+    ```
+
 - 启用poseidon，添加注解@EnablePoseidon
     ```java
     @SpringBootApplication
