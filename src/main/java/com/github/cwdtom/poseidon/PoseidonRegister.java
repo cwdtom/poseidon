@@ -66,6 +66,7 @@ public class PoseidonRegister implements ImportBeanDefinitionRegistrar, Environm
             // 向master注册自己
             String host = environment.getProperty("poseidon.master.host");
             String[] tmp = host.split(":");
+            // salve机开单线程
             Thread thread = new Thread(new PoseidonSend(tmp[0], Integer.parseInt(tmp[1])));
             thread.start();
         } else {
