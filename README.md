@@ -5,8 +5,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
 ## Overview
-- 基于spring-boot，汇聚不同项目的日志文件
+- 基于spring-boot，在分布式环境下汇聚不同主机的日志文件
 - master主机会记录自己的和所有salve机的日志
+- 暂时只支持slf4j
 
 ## Configuration
 - application中添加新配置
