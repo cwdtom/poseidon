@@ -24,7 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 1.0.0
  */
 public class PoseidonRegister implements ImportBeanDefinitionRegistrar, EnvironmentAware {
-    public static ThreadPoolExecutor threadPoolExecutor;
+    private static ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 3,
+            5, TimeUnit.SECONDS, new ArrayBlockingQueue<>(3),
+            new DefaultThreadFactory(3));
     private Environment environment;
 
     /**
@@ -59,21 +61,15 @@ public class PoseidonRegister implements ImportBeanDefinitionRegistrar, Environm
             AnnotationMetadata annotationMetadata, BeanDefinitionRegistry beanDefinitionRegistry) {
         // 添加拦截器
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.addTurboFilter(new PoseidonFilter(environment.getProperty("spring.application.name")));
+        loggerContext.addTurboFilter(new PoseidonFilter());
         // 判断是否是master项目
         String port = environment.getProperty("poseidon.port");
         if (port == null) {
             // 向master注册自己
             String host = environment.getProperty("poseidon.master.host");
             String[] tmp = host.split(":");
-            // salve机开单线程
-            Thread thread = new Thread(new PoseidonSend(tmp[0], Integer.parseInt(tmp[1])));
-            thread.start();
+            PoseidonRegister.threadPoolExecutor.execute(new PoseidonSend(tmp[0], Integer.parseInt(tmp[1])));
         } else {
-            // 初始化线程池
-            PoseidonRegister.threadPoolExecutor = new ThreadPoolExecutor(50, 100,
-                    5, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100),
-                    new DefaultThreadFactory(100));
             // 开放指定端口接收日志
             PoseidonRegister.threadPoolExecutor.execute(new PoseidonSocket(Integer.parseInt(port)));
         }

@@ -21,12 +21,7 @@ import java.util.concurrent.TransferQueue;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PoseidonFilter extends TurboFilter {
-    public static TransferQueue<String> queue = new LinkedTransferQueue<>();
-    private String name;
-
-    public PoseidonFilter(String name) {
-        this.name = name;
-    }
+    public static TransferQueue<JSONObject> queue = new LinkedTransferQueue<>();
 
     @Override
     public FilterReply decide(Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
@@ -35,11 +30,10 @@ public class PoseidonFilter extends TurboFilter {
         }
         // 推送至队列中
         JSONObject obj = new JSONObject();
-        obj.put("name", this.name);
-        obj.put("level", level.levelStr);
+        obj.put("level", level.levelInt);
         obj.put("message", format);
         obj.put("class", logger.getName());
-        PoseidonFilter.queue.offer(obj.toJSONString());
+        PoseidonFilter.queue.offer(obj);
         return FilterReply.ACCEPT;
     }
 }
