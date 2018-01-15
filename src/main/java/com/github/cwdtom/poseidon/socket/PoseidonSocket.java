@@ -23,7 +23,7 @@ import java.util.List;
  * 监听注册端口
  *
  * @author chenweidong
- * @since 1.1.0
+ * @since 1.0.0
  */
 @Slf4j
 public class PoseidonSocket implements Runnable {
@@ -38,6 +38,9 @@ public class PoseidonSocket implements Runnable {
         this.bind();
     }
 
+    /**
+     * 绑定端口
+     */
     private void bind() {
         EventLoopGroup boss = new NioEventLoopGroup();
         EventLoopGroup worker = new NioEventLoopGroup();
@@ -104,6 +107,7 @@ public class PoseidonSocket implements Runnable {
             try {
                 arr = JSON.parseArray(inStr);
             } catch (JSONException ignored) {
+                // 无法处理字符串时直接打印日志
                 log.info(inStr);
                 return;
             }

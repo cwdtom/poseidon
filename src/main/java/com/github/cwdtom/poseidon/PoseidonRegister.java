@@ -32,19 +32,18 @@ public class PoseidonRegister implements ImportBeanDefinitionRegistrar, Environm
     /**
      * 配置默认线程工厂
      */
-    static class DefaultThreadFactory implements ThreadFactory {
+    private static class DefaultThreadFactory implements ThreadFactory {
         private final int MAX_THREAD;
         private final AtomicInteger count = new AtomicInteger(0);
 
         DefaultThreadFactory(int maxThread) {
-            MAX_THREAD = maxThread;
+            this.MAX_THREAD = maxThread;
         }
 
         @Override
         public Thread newThread(Runnable r) {
-            int incrementAndGet = count.incrementAndGet();
-            if(incrementAndGet > MAX_THREAD) {
-                count.decrementAndGet();
+            if(this.count.incrementAndGet() > MAX_THREAD) {
+                this.count.decrementAndGet();
                 return null;
             }
             return new Thread(r);
