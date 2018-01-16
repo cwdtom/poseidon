@@ -6,7 +6,7 @@
 
     <groupId>com.github.cwdtom</groupId>
     <artifactId>poseidon</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <description>gather logs in different places</description>
     <packaging>jar</packaging>
     <name>Poseidon</name>
@@ -43,18 +43,6 @@
             <artifactId>lombok</artifactId>
             <version>1.16.18</version>
             <scope>provided</scope>
-        </dependency>
-        <!-- fastjson -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.44</version>
-        </dependency>
-        <!-- 反射 -->
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.9.11</version>
         </dependency>
         <!-- netty -->
         <dependency>

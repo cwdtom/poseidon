@@ -17,6 +17,10 @@ public class Message {
      */
     private Integer length;
     /**
+     * 日志等级
+     */
+    private Integer level;
+    /**
      * 数据
      */
     private byte[] data;

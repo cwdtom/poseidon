@@ -1,9 +1,6 @@
 package com.github.cwdtom.poseidon.socket;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
+import ch.qos.logback.classic.Level;
 import com.github.cwdtom.poseidon.entity.Message;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -13,8 +10,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -79,8 +74,10 @@ public class PoseidonSocket implements Runnable {
 
         @Override
         protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-            // 读取4字节int类型头
+            // 读取数据长度
             int length = byteBuf.readInt();
+            // 读取日志类型
+            int level = byteBuf.readInt();
             // 判断数据包是否到齐
             if (byteBuf.readableBytes() < length) {
                 // 读取位置归0
@@ -89,7 +86,7 @@ public class PoseidonSocket implements Runnable {
             }
             byte[] body = new byte[length];
             byteBuf.readBytes(body);
-            list.add(new Message(length, body));
+            list.add(new Message(length, level, body));
         }
     }
 
@@ -102,36 +99,20 @@ public class PoseidonSocket implements Runnable {
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message message) throws Exception {
             InetSocketAddress isa = (InetSocketAddress) channelHandlerContext.channel().remoteAddress();
             String ip = isa.getAddress().getHostAddress();
-            JSONArray arr;
             String inStr = new String(message.getData(), "utf-8");
-            try {
-                arr = JSON.parseArray(inStr);
-            } catch (JSONException ignored) {
-                // 无法处理字符串时直接打印日志
-                log.info(inStr);
-                return;
-            }
-            int len = arr.size();
-            for (int i = 0; i < len; i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                Logger logger = LoggerFactory.getLogger(obj.getString("class"));
-                String logStr = String.format("[%s] - %s", ip, obj.getString("message"));
-                switch (obj.getInteger("level")) {
-                    case 10000:
-                        logger.debug(logStr);
-                        break;
-                    case 20000:
-                        logger.info(logStr);
-                        break;
-                    case 30000:
-                        logger.warn(logStr);
-                        break;
-                    case 40000:
-                        logger.error(logStr);
-                        break;
-                    default:
-                        logger.info(logStr);
-                }
+            String logStr = String.format("[%s] - %s", ip, inStr);
+            switch (message.getLevel()) {
+                case Level.INFO_INT:
+                    log.info(logStr);
+                    break;
+                case Level.WARN_INT:
+                    log.warn(logStr);
+                    break;
+                case Level.ERROR_INT:
+                    log.error(logStr);
+                    break;
+                default:
+                    log.info(logStr);
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.github.cwdtom.poseidon.socket;
 
-import com.alibaba.fastjson.JSONArray;
 import com.github.cwdtom.poseidon.entity.Message;
 import com.github.cwdtom.poseidon.filter.PoseidonFilter;
 import io.netty.bootstrap.Bootstrap;
@@ -11,8 +10,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * 发送日志消息
@@ -74,6 +71,7 @@ public class PoseidonSend implements Runnable {
         @Override
         protected void encode(ChannelHandlerContext channelHandlerContext, Message message, ByteBuf byteBuf) {
             byteBuf.writeInt(message.getLength());
+            byteBuf.writeInt(message.getLevel());
             byteBuf.writeBytes(message.getData());
         }
     }
@@ -83,22 +81,10 @@ public class PoseidonSend implements Runnable {
      */
     private class SendHandler extends ChannelInboundHandlerAdapter {
         @Override
-        public void channelActive(ChannelHandlerContext ctx)
-                throws InterruptedException, UnsupportedEncodingException {
-            JSONArray arr = new JSONArray();
-            Long point = System.currentTimeMillis();
-            // 每次间隔5s发送一次日志
-            long interval = 5000L;
+        public void channelActive(ChannelHandlerContext ctx) throws InterruptedException {
             while (true) {
-                while (System.currentTimeMillis() - point < interval) {
-                    // 阻塞
-                    arr.add(PoseidonFilter.queue.take());
-                }
-                point = System.currentTimeMillis();
-                byte[] data = arr.toJSONString().getBytes("utf-8");
-                Message message = new Message(data.length, data);
-                ctx.writeAndFlush(message);
-                arr.clear();
+                // 阻塞
+                ctx.writeAndFlush(PoseidonFilter.queue.take());
             }
         }
     }
