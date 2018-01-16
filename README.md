@@ -8,7 +8,7 @@
 - 基于spring-boot，采用netty框架在分布式环境下汇聚不同主机的日志文件
 - master主机会记录自己的和所有salve机的日志
 - 暂时只支持slf4j
-- 独立的日志中心正在开发中
+- 独立的日志中心(https://github.com/cwdtom/poseidon-center)
 
 ## Configuration
 - application中添加新配置
