@@ -1,7 +1,7 @@
 # Poseidon
 
 
-![Version](https://img.shields.io/badge/version-1.2.0-green.svg)
+![Version](https://img.shields.io/badge/version-1.3.0-green.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
 ## Overview
@@ -18,6 +18,8 @@
     poseidon.port=10001
     # 记录主机地址
     poseidon.master.host=127.0.0.1:10002
+    # 尝试重连时间间隔，单位秒
+    poseidon.reconnect-interval=10
     ```
     
 ## Usage
@@ -26,7 +28,7 @@
     <dependency>
         <groupId>com.github.cwdtom</groupId>
         <artifactId>poseidon</artifactId>
-        <version>1.2.0</version>
+        <version>1.3.0</version>
     </dependency>
     ```
 
