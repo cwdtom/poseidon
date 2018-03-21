@@ -24,4 +24,11 @@ public class Message {
      * 数据
      */
     private byte[] data;
+
+    public Message (Integer level, String msg) {
+        byte[] data = msg.getBytes();
+        this.length = data.length;
+        this.length = level;
+        this.data = data;
+    }
 }

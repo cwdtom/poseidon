@@ -9,6 +9,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
@@ -51,6 +52,8 @@ public class PoseidonSocket implements Runnable {
                 ChannelPipeline p = socketChannel.pipeline();
                 p.addLast(new Decode());
                 p.addLast(new HandlerMessage());
+                p.addLast(new IdleStateHandler(60, 0, 0));
+                p.addLast(new HeartbeatHandler());
             }
         });
         try {
@@ -114,6 +117,16 @@ public class PoseidonSocket implements Runnable {
                 default:
                     log.info(logStr);
             }
+        }
+    }
+
+    /**
+     * 处理心跳
+     */
+    private class HeartbeatHandler extends ChannelInboundHandlerAdapter {
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            ctx.channel().close().sync();
         }
     }
 }

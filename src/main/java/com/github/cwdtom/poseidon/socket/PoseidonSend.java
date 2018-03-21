@@ -1,5 +1,6 @@
 package com.github.cwdtom.poseidon.socket;
 
+import ch.qos.logback.classic.Level;
 import com.github.cwdtom.poseidon.entity.Message;
 import com.github.cwdtom.poseidon.filter.PoseidonFilter;
 import io.netty.bootstrap.Bootstrap;
@@ -9,6 +10,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -48,10 +50,13 @@ public class PoseidonSend implements Runnable {
                 ChannelPipeline p = socketChannel.pipeline();
                 p.addLast(new Encoder());
                 p.addLast(new SendHandler());
+                p.addLast(new IdleStateHandler(0, 15, 0));
+                p.addLast(new HeartbeatHandler());
             }
         });
+        ChannelFuture channelFuture = null;
         try {
-            ChannelFuture channelFuture = bootstrap.connect(this.ip, this.port).sync();
+            channelFuture = bootstrap.connect(this.ip, this.port).sync();
             if (channelFuture.isSuccess()) {
                 log.info("poseidon is connected with " + this.ip + ":" + this.port);
             }
@@ -59,7 +64,13 @@ public class PoseidonSend implements Runnable {
         } catch (InterruptedException e) {
             log.warn("poseidon start fail", e);
         } finally {
-            eventLoopGroup.shutdownGracefully();
+            if (null != channelFuture) {
+                if (channelFuture.channel() != null && channelFuture.channel().isOpen()) {
+                    channelFuture.channel().close();
+                }
+            }
+            // 重连
+            start();
         }
     }
 
@@ -86,6 +97,16 @@ public class PoseidonSend implements Runnable {
                 // 阻塞
                 ctx.writeAndFlush(PoseidonFilter.queue.take());
             }
+        }
+    }
+
+    /**
+     * 处理心跳
+     */
+    private class HeartbeatHandler extends ChannelInboundHandlerAdapter {
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+            ctx.writeAndFlush(new Message(Level.INFO_INT, "heartbeat"));
         }
     }
 }
