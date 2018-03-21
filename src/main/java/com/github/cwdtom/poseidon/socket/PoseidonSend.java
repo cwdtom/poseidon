@@ -23,10 +23,14 @@ import lombok.extern.slf4j.Slf4j;
 public class PoseidonSend implements Runnable {
     private String ip;
     private Integer port;
+    private Long reconnectInterval;
+    private Long initReconnectInterval;
 
-    public PoseidonSend(String ip, Integer port) {
+    public PoseidonSend(String ip, Integer port, Long reconnectInterval) {
         this.ip = ip;
         this.port = port;
+        this.reconnectInterval = reconnectInterval;
+        this.initReconnectInterval = reconnectInterval;
     }
 
     @Override
@@ -58,20 +62,41 @@ public class PoseidonSend implements Runnable {
         try {
             channelFuture = bootstrap.connect(this.ip, this.port).sync();
             if (channelFuture.isSuccess()) {
+                // 重连时间间隔初始化
+                this.reconnectInterval = this.initReconnectInterval;
                 log.info("poseidon is connected with " + this.ip + ":" + this.port);
             }
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             log.warn("poseidon start fail", e);
         } finally {
-            if (null != channelFuture) {
-                if (channelFuture.channel() != null && channelFuture.channel().isOpen()) {
-                    channelFuture.channel().close();
-                }
-            }
-            // 重连
-            start();
+            reconnect(channelFuture);
         }
+    }
+
+    /**
+     * 重连
+     *
+     * @param channelFuture 连接
+     */
+    private void reconnect(ChannelFuture channelFuture) {
+        try {
+            // 防止频繁重连，消耗资源
+            Thread.sleep(this.reconnectInterval);
+            // 每次重连后增加下次重连间隔
+            this.reconnectInterval = this.reconnectInterval << 1;
+        } catch (InterruptedException e) {
+            // 结束日志输出
+            log.error("poseidon reconnect fail, exit");
+            return;
+        }
+        if (null != channelFuture) {
+            if (channelFuture.channel() != null && channelFuture.channel().isOpen()) {
+                channelFuture.channel().close();
+            }
+        }
+        // 重连
+        start();
     }
 
     /**
@@ -92,10 +117,19 @@ public class PoseidonSend implements Runnable {
      */
     private class SendHandler extends ChannelInboundHandlerAdapter {
         @Override
-        public void channelActive(ChannelHandlerContext ctx) throws InterruptedException {
-            while (true) {
-                // 阻塞
-                ctx.writeAndFlush(PoseidonFilter.queue.take());
+        public void channelActive(ChannelHandlerContext ctx) {
+            Message tmp = null;
+            try {
+                while (true) {
+                    tmp = PoseidonFilter.queue.take();
+                    // 阻塞
+                    ctx.writeAndFlush(tmp);
+                }
+            } catch (InterruptedException e) {
+                // 发送失败时将失败message放回队列
+                if (tmp != null) {
+                    PoseidonFilter.queue.offer(tmp);
+                }
             }
         }
     }

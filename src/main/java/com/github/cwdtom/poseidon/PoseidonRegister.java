@@ -67,7 +67,10 @@ public class PoseidonRegister implements ImportBeanDefinitionRegistrar, Environm
             // 向master注册自己
             String host = environment.getProperty("poseidon.master.host");
             String[] tmp = host.split(":");
-            PoseidonRegister.threadPoolExecutor.execute(new PoseidonSend(tmp[0], Integer.parseInt(tmp[1])));
+            // 间隔时间秒->毫秒
+            Long reconnectInterval = Long.parseLong(environment.getProperty("poseidon.reconnect-interval")) * 1000;
+            PoseidonRegister.threadPoolExecutor.execute(
+                    new PoseidonSend(tmp[0], Integer.parseInt(tmp[1]), reconnectInterval));
         } else {
             // 开放指定端口接收日志
             PoseidonRegister.threadPoolExecutor.execute(new PoseidonSocket(Integer.parseInt(port)));
