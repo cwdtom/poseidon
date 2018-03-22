@@ -28,7 +28,7 @@ public class Message {
     public Message (Integer level, String msg) {
         byte[] data = msg.getBytes();
         this.length = data.length;
-        this.length = level;
+        this.level = level;
         this.data = data;
     }
 }

@@ -1,6 +1,5 @@
 package com.github.cwdtom.poseidon.socket;
 
-import ch.qos.logback.classic.Level;
 import com.github.cwdtom.poseidon.entity.Message;
 import com.github.cwdtom.poseidon.filter.PoseidonFilter;
 import io.netty.bootstrap.Bootstrap;
@@ -12,6 +11,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Level;
+
 
 /**
  * 发送日志消息
@@ -52,15 +53,13 @@ public class PoseidonSend implements Runnable {
             @Override
             protected void initChannel(SocketChannel socketChannel) {
                 ChannelPipeline p = socketChannel.pipeline();
+                p.addLast(new IdleStateHandler(0, 1, 0));
                 p.addLast(new Encoder());
                 p.addLast(new SendHandler());
-                p.addLast(new IdleStateHandler(0, 15, 0));
-                p.addLast(new HeartbeatHandler());
             }
         });
-        ChannelFuture channelFuture = null;
         try {
-            channelFuture = bootstrap.connect(this.ip, this.port).sync();
+            ChannelFuture channelFuture = bootstrap.connect(this.ip, this.port).sync();
             if (channelFuture.isSuccess()) {
                 // 重连时间间隔初始化
                 this.reconnectInterval = this.initReconnectInterval;
@@ -70,16 +69,15 @@ public class PoseidonSend implements Runnable {
         } catch (InterruptedException e) {
             log.warn("poseidon start fail", e);
         } finally {
-            reconnect(channelFuture);
+            eventLoopGroup.shutdownGracefully();
+            reconnect();
         }
     }
 
     /**
      * 重连
-     *
-     * @param channelFuture 连接
      */
-    private void reconnect(ChannelFuture channelFuture) {
+    private void reconnect() {
         try {
             // 防止频繁重连，消耗资源
             Thread.sleep(this.reconnectInterval);
@@ -90,13 +88,8 @@ public class PoseidonSend implements Runnable {
             log.error("poseidon reconnect fail, exit");
             return;
         }
-        if (null != channelFuture) {
-            if (channelFuture.channel() != null && channelFuture.channel().isOpen()) {
-                channelFuture.channel().close();
-            }
-        }
         // 重连
-        start();
+        this.start();
     }
 
     /**
@@ -116,31 +109,26 @@ public class PoseidonSend implements Runnable {
      * 处理发送
      */
     private class SendHandler extends ChannelInboundHandlerAdapter {
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) {
-            Message tmp = null;
-            try {
-                while (true) {
-                    tmp = PoseidonFilter.queue.take();
-                    // 阻塞
-                    ctx.writeAndFlush(tmp);
-                }
-            } catch (InterruptedException e) {
-                // 发送失败时将失败message放回队列
-                if (tmp != null) {
-                    PoseidonFilter.queue.offer(tmp);
-                }
-            }
-        }
-    }
+        private Integer idleCount = 0;
+        private Integer heartbeatInterval = 15;
 
-    /**
-     * 处理心跳
-     */
-    private class HeartbeatHandler extends ChannelInboundHandlerAdapter {
+        /**
+         * 处理心跳
+         */
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            ctx.writeAndFlush(new Message(Level.INFO_INT, "heartbeat"));
+            if (PoseidonFilter.queue.isEmpty()) {
+                this.idleCount++;
+                if (this.idleCount > this.heartbeatInterval) {
+                    ctx.writeAndFlush(new Message(Level.INFO_INT, "heartbeat"));
+                    this.idleCount = 0;
+                }
+                return;
+            }
+            this.idleCount = 0;
+            while (!PoseidonFilter.queue.isEmpty()) {
+                ctx.writeAndFlush(PoseidonFilter.queue.poll());
+            }
         }
     }
 }

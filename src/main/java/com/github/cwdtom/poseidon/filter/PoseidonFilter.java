@@ -9,9 +9,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.slf4j.Marker;
 
-import java.io.UnsupportedEncodingException;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TransferQueue;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * slf4j日志拦截器
@@ -22,19 +21,16 @@ import java.util.concurrent.TransferQueue;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PoseidonFilter extends TurboFilter {
-    public static TransferQueue<Message> queue = new LinkedTransferQueue<>();
+    public static Queue<Message> queue = new ConcurrentLinkedQueue<>();
 
     @Override
     public FilterReply decide(Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
         if (level.toInt() < Level.INFO_INT || format == null) {
             return FilterReply.NEUTRAL;
         }
-        try {
-            byte[] data = String.format("[%s] %s", logger.getName(), format).getBytes("utf-8");
-            // 推送至队列中
-            PoseidonFilter.queue.offer(new Message(data.length, level.levelInt, data));
-        } catch (UnsupportedEncodingException ignored) {
-        }
+        String msg = String.format("[%s] %s", logger.getName(), format);
+        // 推送至队列中
+        PoseidonFilter.queue.offer(new Message(Level.INFO_INT, msg));
         return FilterReply.ACCEPT;
     }
 }
