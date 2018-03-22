@@ -28,7 +28,7 @@
     <dependency>
         <groupId>com.github.cwdtom</groupId>
         <artifactId>poseidon</artifactId>
-        <version>1.3.0</version>
+        <version>2.0.0</version>
     </dependency>
     ```
 
