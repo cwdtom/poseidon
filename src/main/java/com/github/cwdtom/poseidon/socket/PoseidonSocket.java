@@ -78,6 +78,11 @@ public class PoseidonSocket implements Runnable {
         protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
             // 读取数据长度
             int length = byteBuf.readInt();
+            // 判断是否为心跳包
+            if (length == 0) {
+                byteBuf.discardReadBytes();
+                return;
+            }
             // 读取日志类型
             int level = byteBuf.readInt();
             // 判断数据包是否到齐
