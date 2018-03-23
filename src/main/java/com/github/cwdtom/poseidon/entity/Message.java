@@ -31,4 +31,8 @@ public class Message {
         this.level = level;
         this.data = data;
     }
+
+    public Message (Integer level) {
+        this.level = level;
+    }
 }

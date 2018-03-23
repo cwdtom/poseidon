@@ -11,7 +11,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Level;
 
 
 /**
@@ -99,6 +98,11 @@ public class PoseidonSend implements Runnable {
 
         @Override
         protected void encode(ChannelHandlerContext channelHandlerContext, Message message, ByteBuf byteBuf) {
+            // 判断是否为心跳包
+            if (message.getLevel() == 0) {
+                byteBuf.writeInt(0);
+                return;
+            }
             byteBuf.writeInt(message.getLength());
             byteBuf.writeInt(message.getLevel());
             byteBuf.writeBytes(message.getData());
@@ -109,8 +113,18 @@ public class PoseidonSend implements Runnable {
      * 处理发送
      */
     private class SendHandler extends ChannelInboundHandlerAdapter {
+        /**
+         * 空闲次数
+         */
         private Integer idleCount = 0;
-        private Integer heartbeatInterval = 15;
+        /**
+         * 心跳发送，空闲次数间隔
+         */
+        private final Integer heartbeatInterval = 20;
+        /**
+         * 心跳消息level
+         */
+        private final Integer heartbeatLevel = 0;
 
         /**
          * 处理心跳
@@ -120,7 +134,7 @@ public class PoseidonSend implements Runnable {
             if (PoseidonFilter.queue.isEmpty()) {
                 this.idleCount++;
                 if (this.idleCount > this.heartbeatInterval) {
-                    ctx.writeAndFlush(new Message(Level.INFO_INT, "heartbeat"));
+                    ctx.writeAndFlush(new Message(this.heartbeatLevel));
                     this.idleCount = 0;
                 }
                 return;
