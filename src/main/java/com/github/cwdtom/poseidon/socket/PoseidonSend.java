@@ -80,8 +80,12 @@ public class PoseidonSend implements Runnable {
         try {
             // 防止频繁重连，消耗资源
             Thread.sleep(this.reconnectInterval);
-            // 每次重连后增加下次重连间隔
-            this.reconnectInterval = this.reconnectInterval << 1;
+            if (this.reconnectInterval > Long.MAX_VALUE >> 1) {
+                // 每次重连后增加下次重连间隔
+                this.reconnectInterval = this.reconnectInterval << 1;
+            } else {
+                this.reconnectInterval = Long.MAX_VALUE;
+            }
         } catch (InterruptedException e) {
             // 结束日志输出
             log.error("poseidon reconnect fail, exit");
