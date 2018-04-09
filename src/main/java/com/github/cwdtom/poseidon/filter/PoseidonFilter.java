@@ -22,6 +22,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Data
 public class PoseidonFilter extends TurboFilter {
     public static Queue<Message> queue = new ConcurrentLinkedQueue<>();
+    /**
+     * 队列最大长度
+     */
+    private final Integer maxSize = 1000;
 
     @Override
     public FilterReply decide(Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
@@ -29,8 +33,11 @@ public class PoseidonFilter extends TurboFilter {
             return FilterReply.NEUTRAL;
         }
         String msg = String.format("[%s] %s", logger.getName(), format);
-        // 推送至队列中
-        PoseidonFilter.queue.offer(new Message(Level.INFO_INT, msg));
+        // 防止连接断开过程中日志占用过多内存
+        if (PoseidonFilter.queue.size() < this.maxSize) {
+            // 推送至队列中
+            PoseidonFilter.queue.offer(new Message(Level.INFO_INT, msg));
+        }
         return FilterReply.ACCEPT;
     }
 }
