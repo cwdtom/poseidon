@@ -58,11 +58,11 @@ public class PoseidonSocket implements Runnable {
         try {
             ChannelFuture channelFuture = bootstrap.bind(this.port).sync();
             if (channelFuture.isSuccess()) {
-                log.info("poseidon is started in " + this.port);
+                log.info("poseidon is started in " + this.port + ".");
             }
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            throw new RuntimeException("netty listen fail", e);
+            throw new RuntimeException("netty listen fail.\n", e);
         } finally {
             boss.shutdownGracefully();
             worker.shutdownGracefully();

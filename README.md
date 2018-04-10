@@ -1,7 +1,7 @@
 # Poseidon
 
 
-![Version](https://img.shields.io/badge/version-2.1.3-green.svg)
+![Version](https://img.shields.io/badge/version-2.2.0-green.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
 ## Overview
@@ -28,7 +28,7 @@
     <dependency>
         <groupId>com.github.cwdtom</groupId>
         <artifactId>poseidon</artifactId>
-        <version>2.1.3</version>
+        <version>2.2.0</version>
     </dependency>
     ```
 

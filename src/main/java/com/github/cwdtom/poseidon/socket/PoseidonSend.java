@@ -24,13 +24,11 @@ public class PoseidonSend implements Runnable {
     private String ip;
     private Integer port;
     private Long reconnectInterval;
-    private Long initReconnectInterval;
 
     public PoseidonSend(String ip, Integer port, Long reconnectInterval) {
         this.ip = ip;
         this.port = port;
         this.reconnectInterval = reconnectInterval;
-        this.initReconnectInterval = reconnectInterval;
     }
 
     @Override
@@ -60,13 +58,12 @@ public class PoseidonSend implements Runnable {
         try {
             ChannelFuture channelFuture = bootstrap.connect(this.ip, this.port).sync();
             if (channelFuture.isSuccess()) {
-                // 重连时间间隔初始化
-                this.reconnectInterval = this.initReconnectInterval;
-                log.info("poseidon is connected with " + this.ip + ":" + this.port);
+                log.info("poseidon is connected with " + this.ip + ":" + this.port + ".");
+                log.info("poseidon reconnect interval is " + this.reconnectInterval + "ms.");
             }
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            log.warn("poseidon start fail", e);
+            log.warn("poseidon caught exception.\n", e);
         } finally {
             eventLoopGroup.shutdownGracefully();
             reconnect();
@@ -80,18 +77,13 @@ public class PoseidonSend implements Runnable {
         try {
             // 防止频繁重连，消耗资源
             Thread.sleep(this.reconnectInterval);
-            if (this.reconnectInterval > Long.MAX_VALUE >> 1) {
-                // 每次重连后增加下次重连间隔
-                this.reconnectInterval = this.reconnectInterval << 1;
-            } else {
-                this.reconnectInterval = Long.MAX_VALUE;
-            }
         } catch (InterruptedException e) {
             // 结束日志输出
-            log.error("poseidon reconnect fail, exit");
+            log.error("poseidon reconnect fail, already exit.");
             return;
         }
         // 重连
+        log.info("poseidon start reconnect.");
         this.start();
     }
 
@@ -141,11 +133,11 @@ public class PoseidonSend implements Runnable {
                     ctx.writeAndFlush(new Message(this.heartbeatLevel));
                     this.idleCount = 0;
                 }
-                return;
-            }
-            this.idleCount = 0;
-            while (!PoseidonFilter.queue.isEmpty()) {
-                ctx.writeAndFlush(PoseidonFilter.queue.poll());
+            } else {
+                this.idleCount = 0;
+                while (!PoseidonFilter.queue.isEmpty()) {
+                    ctx.writeAndFlush(PoseidonFilter.queue.poll());
+                }
             }
         }
     }
