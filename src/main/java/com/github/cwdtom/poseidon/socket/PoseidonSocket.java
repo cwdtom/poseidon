@@ -10,6 +10,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
@@ -22,22 +23,12 @@ import java.util.List;
  * @since 1.0.0
  */
 @Slf4j
+@AllArgsConstructor
 public class PoseidonSocket implements Runnable {
     private Integer port;
 
-    public PoseidonSocket(Integer port) {
-        this.port = port;
-    }
-
     @Override
     public void run() {
-        this.bind();
-    }
-
-    /**
-     * 绑定端口
-     */
-    private void bind() {
         EventLoopGroup boss = new NioEventLoopGroup();
         EventLoopGroup worker = new NioEventLoopGroup();
         ServerBootstrap bootstrap = new ServerBootstrap();
