@@ -63,7 +63,7 @@ public class PoseidonSend implements Runnable {
             }
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            log.warn("poseidon caught exception.\n", e);
+            log.warn("poseidon sync exception.\n", e);
         } finally {
             eventLoopGroup.shutdownGracefully();
             reconnect();
@@ -122,9 +122,6 @@ public class PoseidonSend implements Runnable {
          */
         private final Integer heartbeatLevel = 0;
 
-        /**
-         * 处理心跳
-         */
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (PoseidonFilter.queue.isEmpty()) {
@@ -139,6 +136,12 @@ public class PoseidonSend implements Runnable {
                     ctx.writeAndFlush(PoseidonFilter.queue.poll());
                 }
             }
+        }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            log.warn("poseidon caught exception.", cause);
+            ctx.close();
         }
     }
 }
