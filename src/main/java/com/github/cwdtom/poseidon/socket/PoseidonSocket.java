@@ -25,6 +25,9 @@ import java.util.List;
 @Slf4j
 @AllArgsConstructor
 public class PoseidonSocket implements Runnable {
+    /**
+     * 端口
+     */
     private Integer port;
 
     @Override
@@ -64,7 +67,6 @@ public class PoseidonSocket implements Runnable {
      * 解码器
      */
     private class Decode extends ByteToMessageDecoder {
-
         @Override
         protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
             // 读取数据长度
@@ -115,9 +117,6 @@ public class PoseidonSocket implements Runnable {
             }
         }
 
-        /**
-         * 处理心跳
-         */
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             log.warn(ctx.channel().remoteAddress().toString() + " is offline.");

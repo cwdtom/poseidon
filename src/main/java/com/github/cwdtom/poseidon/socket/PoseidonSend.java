@@ -78,8 +78,7 @@ public class PoseidonSend implements Runnable {
             // 防止频繁重连，消耗资源
             Thread.sleep(this.reconnectInterval);
         } catch (InterruptedException e) {
-            // 结束日志输出
-            log.error("poseidon reconnect fail, already exit.");
+            log.error("poseidon thread wake up fail, already exit.");
             return;
         }
         // 重连
@@ -91,7 +90,6 @@ public class PoseidonSend implements Runnable {
      * 编码器
      */
     private class Encoder extends MessageToByteEncoder<Message> {
-
         @Override
         protected void encode(ChannelHandlerContext channelHandlerContext, Message message, ByteBuf byteBuf) {
             // 判断是否为心跳包
@@ -112,15 +110,15 @@ public class PoseidonSend implements Runnable {
         /**
          * 空闲次数
          */
-        private Integer idleCount = 0;
+        private int idleCount = 0;
         /**
          * 心跳发送，空闲次数间隔
          */
-        private final Integer heartbeatInterval = 20;
+        private final int heartbeatInterval = 20;
         /**
          * 心跳消息level
          */
-        private final Integer heartbeatLevel = 0;
+        private final int heartbeatLevel = 0;
 
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {

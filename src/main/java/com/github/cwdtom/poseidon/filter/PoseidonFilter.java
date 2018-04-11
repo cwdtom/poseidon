@@ -5,8 +5,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.github.cwdtom.poseidon.entity.Message;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.slf4j.Marker;
 
 import java.util.Queue;
@@ -18,14 +16,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author chenweidong
  * @since 1.0.0
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
 public class PoseidonFilter extends TurboFilter {
-    public static Queue<Message> queue = new ConcurrentLinkedQueue<>();
     /**
-     * 队列最大长度
+     * 日志队列
      */
-    private final Integer maxSize = 1000;
+    public static Queue<Message> queue = new ConcurrentLinkedQueue<>();
 
     @Override
     public FilterReply decide(Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
@@ -34,7 +29,8 @@ public class PoseidonFilter extends TurboFilter {
         }
         String msg = String.format("[%s] %s", logger.getName(), format);
         // 防止连接断开过程中日志占用过多内存
-        if (PoseidonFilter.queue.size() < this.maxSize) {
+        Integer maxSize = 1000;
+        if (PoseidonFilter.queue.size() < maxSize) {
             // 推送至队列中
             PoseidonFilter.queue.offer(new Message(Level.INFO_INT, msg));
         }
