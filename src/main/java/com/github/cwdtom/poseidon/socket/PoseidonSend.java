@@ -1,14 +1,13 @@
 package com.github.cwdtom.poseidon.socket;
 
+import com.github.cwdtom.poseidon.coder.Encoder;
 import com.github.cwdtom.poseidon.entity.Message;
 import com.github.cwdtom.poseidon.filter.PoseidonFilter;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,8 +20,17 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class PoseidonSend implements Runnable {
+    /**
+     * ip
+     */
     private String ip;
+    /**
+     * 端口
+     */
     private Integer port;
+    /**
+     * 重连时间间隔
+     */
     private Long reconnectInterval;
 
     public PoseidonSend(String ip, Integer port, Long reconnectInterval) {
@@ -87,23 +95,6 @@ public class PoseidonSend implements Runnable {
     }
 
     /**
-     * 编码器
-     */
-    private class Encoder extends MessageToByteEncoder<Message> {
-        @Override
-        protected void encode(ChannelHandlerContext channelHandlerContext, Message message, ByteBuf byteBuf) {
-            // 判断是否为心跳包
-            if (message.getLevel() == 0) {
-                byteBuf.writeInt(0);
-                return;
-            }
-            byteBuf.writeInt(message.getLength());
-            byteBuf.writeInt(message.getLevel());
-            byteBuf.writeBytes(message.getData());
-        }
-    }
-
-    /**
      * 处理发送
      */
     private class SendHandler extends ChannelInboundHandlerAdapter {
@@ -115,17 +106,13 @@ public class PoseidonSend implements Runnable {
          * 心跳发送，空闲次数间隔
          */
         private final int heartbeatInterval = 20;
-        /**
-         * 心跳消息level
-         */
-        private final int heartbeatLevel = 0;
 
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (PoseidonFilter.queue.isEmpty()) {
                 this.idleCount++;
                 if (this.idleCount > this.heartbeatInterval) {
-                    ctx.writeAndFlush(new Message(this.heartbeatLevel));
+                    ctx.writeAndFlush(Message.buildHeartbeat());
                     this.idleCount = 0;
                 }
             } else {

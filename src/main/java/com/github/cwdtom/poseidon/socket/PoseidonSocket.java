@@ -1,20 +1,18 @@
 package com.github.cwdtom.poseidon.socket;
 
 import ch.qos.logback.classic.Level;
+import com.github.cwdtom.poseidon.coder.Decoder;
 import com.github.cwdtom.poseidon.entity.Message;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 /**
  * 监听注册端口
@@ -44,7 +42,7 @@ public class PoseidonSocket implements Runnable {
             @Override
             protected void initChannel(SocketChannel socketChannel) {
                 ChannelPipeline p = socketChannel.pipeline();
-                p.addLast(new Decode());
+                p.addLast(new Decoder());
                 p.addLast(new HandlerMessage());
                 p.addLast(new IdleStateHandler(60, 0, 0));
             }
@@ -60,35 +58,6 @@ public class PoseidonSocket implements Runnable {
         } finally {
             boss.shutdownGracefully();
             worker.shutdownGracefully();
-        }
-    }
-
-    /**
-     * 解码器
-     */
-    private class Decode extends ByteToMessageDecoder {
-        @Override
-        protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-            // 读取数据长度
-            int length = byteBuf.readInt();
-            // 判断是否为心跳包
-            if (length == 0) {
-                byteBuf.discardReadBytes();
-                return;
-            }
-            // 读取日志类型
-            int level = byteBuf.readInt();
-            // 判断数据包是否到齐
-            if (byteBuf.readableBytes() < length) {
-                // 读取位置归0
-                byteBuf.readerIndex(0);
-                return;
-            }
-            byte[] body = new byte[length];
-            byteBuf.readBytes(body);
-            // 释放已读buffer
-            byteBuf.discardReadBytes();
-            list.add(new Message(length, level, body));
         }
     }
 
