@@ -48,6 +48,7 @@ public class PoseidonSend implements Runnable {
      * 启动socket连接
      */
     private void start() {
+        // cpu核数
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class);

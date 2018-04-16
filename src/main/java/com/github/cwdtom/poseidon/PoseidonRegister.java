@@ -27,11 +27,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class PoseidonRegister implements ImportBeanDefinitionRegistrar, EnvironmentAware {
     /**
+     * 连接数等于cpu核心数
+     */
+    private static final Integer THREAD_SUM = Runtime.getRuntime().availableProcessors();
+    /**
      * 线程池
      */
-    private static ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 3,
-            5, TimeUnit.SECONDS, new ArrayBlockingQueue<>(3),
-            new DefaultThreadFactory(3));
+    private static ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(THREAD_SUM, THREAD_SUM,
+            5, TimeUnit.SECONDS, new ArrayBlockingQueue<>(THREAD_SUM),
+            new DefaultThreadFactory(THREAD_SUM));
     /**
      * spring环境变量
      */
@@ -61,7 +65,7 @@ public class PoseidonRegister implements ImportBeanDefinitionRegistrar, Environm
                 this.count.decrementAndGet();
                 return null;
             }
-            return new Thread(r);
+            return new Thread(r, "poseidon-" + this.count.toString());
         }
     }
 
@@ -84,8 +88,10 @@ public class PoseidonRegister implements ImportBeanDefinitionRegistrar, Environm
             String[] tmp = host.split(":");
             // 间隔时间秒->毫秒，为空时初始化默认10秒
             Long reconnectInterval = ri == null ? 10 * 1000 : Long.parseLong(ri) * 1000;
-            PoseidonRegister.threadPoolExecutor.execute(
-                    new PoseidonSend(tmp[0], Integer.parseInt(tmp[1]), reconnectInterval));
+            for (int i = 0; i < PoseidonRegister.THREAD_SUM; i++) {
+                PoseidonRegister.threadPoolExecutor.execute(
+                        new PoseidonSend(tmp[0], Integer.parseInt(tmp[1]), reconnectInterval));
+            }
         } else if (port != null && host == null) {
             // server端
             // 开放指定端口接收日志
